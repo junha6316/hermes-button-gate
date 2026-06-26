@@ -8,7 +8,9 @@ no-network path (message_ts unset → returns before any Slack call), so
 
 import asyncio
 import json
+import sys
 import threading
+import types
 
 import pytest
 
@@ -177,3 +179,39 @@ def test_on_pick_is_idempotent():
 
 def test_on_pick_malformed_value_is_ignored():
     _run(bg._on_pick(_Ack(), {}, {"value": "not-a-valid-triplet"}))
+
+
+# --- timeout path (complete=false, missing populated) ---------------------
+
+def test_button_gate_timeout_reports_incomplete(monkeypatch):
+    """No pick before timeout → complete=false with the unpicked keys listed.
+
+    The Slack runtime is stubbed so this stays hermetic: get_current_session_key
+    (from tools.approval) yields a slack session, and slack_sdk.WebClient's post
+    is a no-op returning a ts. timeout_sec=0 makes the wait return immediately.
+    """
+    approval = types.ModuleType("tools.approval")
+    approval.get_current_session_key = lambda: "agent:main:slack:channel:C123"
+    tools_pkg = types.ModuleType("tools")
+    monkeypatch.setitem(sys.modules, "tools", tools_pkg)
+    monkeypatch.setitem(sys.modules, "tools.approval", approval)
+
+    slack_sdk = types.ModuleType("slack_sdk")
+
+    class _FakeClient:
+        def __init__(self, *a, **k):
+            pass
+
+        def chat_postMessage(self, *a, **k):
+            return {"ts": "1700000000.000200"}
+
+    slack_sdk.WebClient = _FakeClient
+    monkeypatch.setitem(sys.modules, "slack_sdk", slack_sdk)
+    monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
+
+    args = {"groups": [{"key": "g1", "options": [{"label": "A", "value": "va"}]}],
+            "timeout_sec": 0}
+    out = json.loads(bg._button_gate(args))
+    assert out["complete"] is False
+    assert out["picks"] == {}
+    assert out["missing"] == ["g1"]
