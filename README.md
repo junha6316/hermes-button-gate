@@ -24,7 +24,9 @@ Each option can carry a public `image_url`, so it's well suited to picking betwe
 
 ## Scope (read this)
 
-**Slack only, gateway mode.** The handler posts via the Slack Web API and resolves picks through Hermes' Slack action-handler hook. It does **not** yet support Discord/Telegram or CLI sessions — in a non-Slack session the tool returns an error instead of blocking. Generalizing across platform adapters is the obvious next step (PRs welcome).
+**Slack only, gateway mode.** The handler posts via the Slack Web API and resolves picks through Hermes' Slack action-handler hook. It does **not** support Discord/Telegram or CLI sessions — in a non-Slack session the tool returns a clear error instead of blocking.
+
+Generalizing to Discord/Telegram is **blocked on Hermes core**, not on this plugin: `PluginContext` only exposes `register_slack_action_handler`. The Telegram and Discord adapters route interaction callbacks through closed dispatchers, so a plugin can send buttons but can't receive the clicks. A cross-platform `register_interactive_handler(platform, pattern, callback)` extension point in Hermes core would unblock it.
 
 The bridge uses a `threading.Event` keyed by a per-call token, so it works in gateway mode (unlike the CLI-only `inject_message`). Buttons lock after a pick (`chat_update` removes them), and a stale-token guard prevents a leftover button from an earlier gate resolving a later one.
 

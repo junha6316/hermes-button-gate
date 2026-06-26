@@ -215,3 +215,17 @@ def test_button_gate_timeout_reports_incomplete(monkeypatch):
     assert out["complete"] is False
     assert out["picks"] == {}
     assert out["missing"] == ["g1"]
+
+
+def test_button_gate_rejects_non_slack_platform(monkeypatch):
+    """A Telegram/Discord session gets a clear Slack-only error, not a block."""
+    approval = types.ModuleType("tools.approval")
+    approval.get_current_session_key = lambda: "agent:main:telegram:dm:123456789"
+    tools_pkg = types.ModuleType("tools")
+    monkeypatch.setitem(sys.modules, "tools", tools_pkg)
+    monkeypatch.setitem(sys.modules, "tools.approval", approval)
+
+    args = {"groups": [{"key": "g1", "options": [{"label": "A", "value": "va"}]}]}
+    err = json.loads(bg._button_gate(args))["error"]
+    assert "Slack only" in err
+    assert "telegram" in err

@@ -229,7 +229,18 @@ def _button_gate(args: Dict[str, Any], **_: Any) -> str:
     session_key = get_current_session_key()
     channel, thread_ts = _channel_and_thread(session_key)
     if not channel:
-        return _j({"error": f"not a slack session (session_key={session_key!r})"})
+        # session_key is 'agent:main:<platform>:<chat_type>:...'.
+        parts = session_key.split(":")
+        platform = parts[2] if len(parts) > 2 else "unknown"
+        if platform != "slack":
+            return _j({"error": (
+                f"button_gate currently supports Slack only; this is a "
+                f"{platform!r} session. Receiving button clicks on "
+                f"Discord/Telegram needs a Hermes core interactive-handler "
+                f"hook that does not exist yet (only register_slack_action_handler "
+                f"is exposed to plugins)."
+            )})
+        return _j({"error": f"could not parse slack channel (session_key={session_key!r})"})
 
     token = os.environ.get("SLACK_BOT_TOKEN")
     if not token:
