@@ -1,0 +1,9 @@
+name: button-gate
+version: 1.0.0
+description: "Visual multi-pick HITL gate for Slack — Block Kit image buttons. The button_gate tool posts N image options (one or many independent picks) and blocks until clicked; the action handler resolves each pick and locks its buttons via chat_update. A visual, multi-pick alternative to the core clarify tool (which on Slack is numbered text). Self-contained Event bridge (works in gateway mode, no CLI inject_message)."
+author: "Junha Park (junha6316)"
+kind: standalone
+requires_env:
+  - SLACK_BOT_TOKEN
+provides_tools:
+  - button_gate

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hermes-button-gate"
+version = "1.0.0"
+description = "Visual multi-pick HITL gate for Hermes Agent on Slack (Block Kit buttons)."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Junha Park" }]
+requires-python = ">=3.11"
+keywords = ["hermes", "hermes-agent", "slack", "hitl", "human-in-the-loop", "plugin"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Communications :: Chat",
+]
+dependencies = [
+    # slack-sdk is pre-installed by Hermes when the Slack platform is enabled;
+    # declared here so the plugin also works in a bare environment. Upper bound
+    # per Hermes supply-chain policy (>=floor,<next_major).
+    "slack-sdk>=3.21,<4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
+[project.urls]
+Homepage = "https://github.com/junha6316/hermes-button-gate"
+Issues = "https://github.com/junha6316/hermes-button-gate/issues"
+
+# Hermes discovers pip-installed plugins through this entry-point group
+# (hermes_cli/plugins.py: ENTRY_POINTS_GROUP = "hermes_agent.plugins").
+[project.entry-points."hermes_agent.plugins"]
+button-gate = "hermes_button_gate:register"
+
+[tool.hatch.build.targets.wheel]
+packages = ["hermes_button_gate"]
